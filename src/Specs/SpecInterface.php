@@ -25,7 +25,5 @@ interface SpecInterface
      */
     public function getSupportedHashAlgorithms(): array;
 
-    public function isSupportedHashContent(string $content): bool;
-
     // endregion Supports
 }

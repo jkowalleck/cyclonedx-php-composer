@@ -5,6 +5,7 @@ namespace CycloneDX\Tests\Composer;
 use CycloneDX\Composer\BomGenerator;
 use CycloneDX\Enums\AbstractHashAlgorithm;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -132,7 +133,7 @@ class BomGeneratorTest extends TestCase
         self::assertEquals('packageDescription', $component->getDescription());
         self::assertEquals('library', $component->getType());
         self::assertEquals([new License('MIT')], $component->getLicenses());
-        self::assertEquals([AbstractHashAlgorithm::SHA_1 => '7e240de74fb1ed08fa08d38063f6a6a91462a815'], $component->getHashes());
+        self::assertEquals([new Hash(AbstractHashAlgorithm::SHA_1, '7e240de74fb1ed08fa08d38063f6a6a91462a815')], $component->getHashes());
         self::assertEquals('pkg:composer/vendorName/packageName@6.6.6', $component->getPackageUrl());
     }
 

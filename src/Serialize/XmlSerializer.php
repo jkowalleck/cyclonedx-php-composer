@@ -24,6 +24,7 @@ namespace CycloneDX\Serialize;
 use CycloneDX\Helpers\SimpleDomTrait;
 use CycloneDX\Models\Bom;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use CycloneDX\Specs\Spec10;
 use CycloneDX\Specs\Spec11;
@@ -135,35 +136,33 @@ class XmlSerializer extends AbstractSerialize implements SerializerInterface
     }
 
     /**
-     * @param array<string, string> $hashes
+     * @param Hash[] $hashes
      *
      * @return Generator<DOMElement>
      */
     public function hashesToDom(DOMDocument $document, array $hashes): Generator
     {
-        foreach ($hashes as $algorithm => $content) {
+        foreach ($hashes as $hash) {
             try {
-                yield $this->hashToDom($document, $algorithm, $content);
+                yield $this->hashToDom($document, $hash);
             } catch (DomainException $ex) {
-                trigger_error("skipped hash: {$ex->getMessage()} ({$algorithm}, {$content})", E_USER_WARNING);
+                trigger_error("skipped hash: {$ex->getMessage()} '{$hash->getAlgorithm()}'", E_USER_WARNING);
                 unset($ex);
             }
         }
     }
 
     /**
-     * @throws DomainException if hash is not supported by spec. Code 1: algorithm unsupported Code 2:  content unsupported
+     * @throws DomainException if hash algorithm is not supported by spec
      */
-    public function hashToDom(DOMDocument $document, string $algorithm, string $content): DOMElement
+    public function hashToDom(DOMDocument $document, Hash $hash): DOMElement
     {
+        $algorithm = $hash->getAlgorithm();
         if (false === $this->spec->isSupportedHashAlgorithm($algorithm)) {
-            throw new DomainException('invalid algorithm', 1);
-        }
-        if (false === $this->spec->isSupportedHashContent($content)) {
-            throw new DomainException('invalid content', 2);
+            throw new DomainException('invalid algorithm');
         }
 
-        $element = $this->simpleDomSaveTextElement($document, 'hash', $content);
+        $element = $this->simpleDomSaveTextElement($document, 'hash', $hash->getContent());
         assert(null !== $element);
         $this->simpleDomSetAttributes($element, [
             'alg' => $algorithm,

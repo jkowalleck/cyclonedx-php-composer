@@ -24,6 +24,7 @@ namespace CycloneDX\Serialize;
 use CycloneDX\Helpers\SimpleDomTrait;
 use CycloneDX\Models\Bom;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use DOMDocument;
 use DOMElement;
@@ -167,21 +168,18 @@ class XmlDeserializer extends AbstractSerialize implements DeserializerInterface
     }
 
     /**
-     * @return Generator<string, string>
+     * @return Generator<Hash>
      */
     public function hashesFromDom(DOMElement $element): Generator
     {
         foreach ($this->simpleDomGetChildElements($element) as $childElement) {
-            yield from $this->hashFromDom($childElement);
+            yield $this->hashFromDom($childElement);
         }
     }
 
-    /**
-     * @return Generator<string, string>
-     */
-    public function hashFromDom(DOMElement $element): Generator
+    public function hashFromDom(DOMElement $element): Hash
     {
-        yield $element->getAttribute('alg') => $element->nodeValue;
+        return new Hash($element->getAttribute('alg'), $element->nodeValue);
     }
 
     // endregion DeserializerInterface

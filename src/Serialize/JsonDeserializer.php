@@ -23,6 +23,7 @@ namespace CycloneDX\Serialize;
 
 use CycloneDX\Models\Bom;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use Generator;
 use InvalidArgumentException;
@@ -108,12 +109,12 @@ class JsonDeserializer extends AbstractSerialize implements DeserializerInterfac
     /**
      * @param array<string, mixed> $json
      *
-     * @return Generator<string, string>
+     * @return Generator<Hash>
      */
     public function hashesFromJson(array $json): Generator
     {
         foreach ($json as ['alg' => $algorithm, 'content' => $content]) {
-            yield $algorithm => $content;
+            yield new Hash($algorithm, $content);
         }
     }
 

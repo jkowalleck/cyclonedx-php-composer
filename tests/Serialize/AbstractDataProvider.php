@@ -6,6 +6,7 @@ use CycloneDX\Enums\AbstractClassification;
 use CycloneDX\Enums\AbstractHashAlgorithm;
 use CycloneDX\Models\Bom;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use CycloneDX\Specs\Spec10;
 use CycloneDX\Specs\Spec11;
@@ -166,7 +167,9 @@ abstract class AbstractDataProvider
         $label = implode(',', $hashAlgorithms);
         yield "hash algs: {{$label}}" => [(new Bom())->setComponents([
             (new Component(AbstractClassification::LIBRARY, 'name', '1.0'))
-                ->setHashes(array_fill_keys($hashAlgorithms, '12345678901234567890123456789012')),
+                ->setHashes(array_map(static function (string $alg): Hash {
+                    return new Hash($alg, '12345678901234567890123456789012');
+                }, $hashAlgorithms)),
         ])];
     }
 

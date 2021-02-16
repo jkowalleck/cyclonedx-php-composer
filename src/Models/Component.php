@@ -95,7 +95,7 @@ class Component
      *
      * Specifies the file hashes of the component.
      *
-     * @var array<string, string>
+     * @var Hash[]
      */
     private $hashes = [];
 
@@ -206,7 +206,7 @@ class Component
     }
 
     /**
-     * @return array<string, string>
+     * @return Hash[]
      */
     public function getHashes(): array
     {
@@ -214,26 +214,22 @@ class Component
     }
 
     /**
-     * @param array<string, string> $hashes array<$algorithm, $content>
+     * @param Hash[] $hashes array<$algorithm, $content>
      *
-     *@throws InvalidArgumentException if any of hashes' values is not a string
-     * @throws DomainException if any of hashes' keys is not in {@see AbstractHashAlgorithm}
+     * @throws DomainException          if any of hashes' keys is not in {@see AbstractHashAlgorithm}
+     * @throws InvalidArgumentException if any of hashes' values is not valid
      *
      * @return $this;
      */
     public function setHashes(array $hashes): self
     {
-        $algorithms = (new \ReflectionClass(AbstractHashAlgorithm::class))->getConstants();
-        foreach ($hashes as $alg => $content) {
-            if (false === in_array($alg, $algorithms, true)) {
-                throw new DomainException("Unknown hash algorithm: {$alg}");
-            }
+        foreach ($hashes as $hash) {
             /* @phpstan-ignore-next-line */
-            if (false === is_string($content)) {
-                throw new InvalidArgumentException("Hash content for '{$alg}' is not string.");
+            if (false === $hash instanceof Hash) {
+                throw new InvalidArgumentException('Not a Hash: '.var_export($hash, true));
             }
         }
-        $this->hashes = $hashes;
+        $this->hashes = array_values($hashes);
 
         return $this;
     }

@@ -28,9 +28,4 @@ trait SupportsTrait
     {
         return self::HASH_ALGORITHMS;
     }
-
-    public function isSupportedHashContent(string $content): bool
-    {
-        return false !== preg_match(self::HASH_CONTENT_REGEX, $content);
-    }
 }

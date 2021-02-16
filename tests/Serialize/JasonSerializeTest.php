@@ -2,6 +2,7 @@
 
 namespace CycloneDX\Tests\Serialize;
 
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use CycloneDX\Serialize\JsonSerializer;
 use CycloneDX\Specs\SpecInterface;
@@ -20,45 +21,35 @@ class JasonSerializeTest extends TestCase
 
     public function testHashToJson(): void
     {
-        $hash = ['alg' => $this->getRandomString(), 'content' => $this->getRandomString()];
+        $algorithm = $this->getRandomString();
+        $content = $this->getRandomString();
+        $hash = $this->createStub(Hash::class);
+        $hash->method('getAlgorithm')->willReturn($algorithm);
+        $hash->method('getContent')->willReturn($content);
 
         $spec = $this->createMock(SpecInterface::class);
-        $spec->method('isSupportedHashAlgorithm')->with($hash['alg'])->willReturn(true);
-        $spec->method('isSupportedHashContent')->with($hash['content'])->willReturn(true);
+        $spec->method('isSupportedHashAlgorithm')->with($algorithm)->willReturn(true);
         $serializer = new JsonSerializer($spec);
 
-        $data = $serializer->hashToJson($hash['alg'], $hash['content']);
+        $data = $serializer->hashToJson($hash);
 
         self::assertIsArray($data);
-        self::assertEquals($hash, $data);
+        self::assertEquals(['alg' => $algorithm, 'content' => $content], $data);
     }
 
     public function testHashToJsonInvalidAlgorithm(): void
     {
         $algorithm = $this->getRandomString();
+        $hash = $this->createStub(Hash::class);
+        $hash->method('getAlgorithm')->willReturn($algorithm);
 
         $spec = $this->createMock(SpecInterface::class);
         $spec->method('isSupportedHashAlgorithm')->with($algorithm)->willReturn(false);
-        $spec->method('isSupportedHashContent')->willReturn(true);
         $serializer = new JsonSerializer($spec);
 
         $this->expectException(DomainException::class);
         $this->expectExceptionMessageMatches('/invalid algorithm/i');
-        $serializer->hashToJson($algorithm, $this->getRandomString());
-    }
-
-    public function testHashToJsonInvalidContent(): void
-    {
-        $content = $this->getRandomString();
-
-        $spec = $this->createMock(SpecInterface::class);
-        $spec->method('isSupportedHashAlgorithm')->willReturn(true);
-        $spec->method('isSupportedHashContent')->with($content)->willReturn(false);
-        $serializer = new JsonSerializer($spec);
-
-        $this->expectException(DomainException::class);
-        $this->expectExceptionMessageMatches('/invalid content/i');
-        $serializer->hashToJson($this->getRandomString(), $content);
+        $serializer->hashToJson($hash);
     }
 
     // endregion hashToJson
@@ -113,17 +104,15 @@ class JasonSerializeTest extends TestCase
 
         $algorithm = $this->getRandomString();
         $content = $this->getRandomString();
-        $hashes = [
-            $algorithm => $content,
-        ];
         $hashToJsonFake = [$algorithm, $content];
         $expected = [$hashToJsonFake];
+        $hash = $this->createStub(Hash::class);
 
         $serializer->method('hashToJson')
-            ->with($algorithm, $content)
+            ->with($hash)
             ->willReturn($hashToJsonFake);
 
-        $serialized = iterator_to_array($serializer->hashesToJson($hashes));
+        $serialized = iterator_to_array($serializer->hashesToJson([$hash]));
 
         self::assertEquals($expected, $serialized);
     }
@@ -133,21 +122,17 @@ class JasonSerializeTest extends TestCase
         $serializer = $this->createPartialMock(JsonSerializer::class, ['hashToJson']);
 
         $errorMessage = $this->getRandomString();
-        $algorithm = $this->getRandomString();
-        $content = $this->getRandomString();
-        $hashes = [
-            $algorithm => $content,
-        ];
+        $hash = $this->createStub(Hash::class);
 
         $serializer->method('hashToJson')
-            ->with($algorithm, $content)
+            ->with($hash)
             ->willThrowException(new DomainException($errorMessage));
 
         $this->expectWarning();
         $this->expectWarningMessageMatches('/skipped hash/i');
         $this->expectWarningMessageMatches('/'.preg_quote($errorMessage, '/').'/');
 
-        iterator_to_array($serializer->hashesToJson($hashes));
+        iterator_to_array($serializer->hashesToJson([$hash]));
     }
 
     // endregion

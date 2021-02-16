@@ -23,6 +23,7 @@ namespace CycloneDX\Serialize;
 
 use CycloneDX\Models\Bom;
 use CycloneDX\Models\Component;
+use CycloneDX\Models\Hash;
 use CycloneDX\Models\License;
 use CycloneDX\Specs\Spec12;
 use DomainException;
@@ -146,39 +147,37 @@ class JsonSerializer extends AbstractSerialize implements SerializerInterface
     }
 
     /**
-     * @param array<string, string> $hashes
+     * @param Hash[] $hashes
      *
      * @return Generator<array{alg: string, content: string}>
      */
     public function hashesToJson(array $hashes): Generator
     {
-        foreach ($hashes as $algorithm => $content) {
+        foreach ($hashes as $algorithm) {
             try {
-                yield $this->hashToJson($algorithm, $content);
+                yield $this->hashToJson($algorithm);
             } catch (DomainException $ex) {
-                trigger_error("skipped hash: {$ex->getMessage()} ({$algorithm}, {$content})", E_USER_WARNING);
+                trigger_error("skipped hash: {$ex->getMessage()} '{$algorithm->getAlgorithm()}'", E_USER_WARNING);
                 unset($ex);
             }
         }
     }
 
     /**
-     * @throws DomainException if hash is not supported by spec. Code 1: algorithm unsupported Code 2:  content unsupported
+     * @throws DomainException if hash algorithm is not supported by spec
      *
      * @return array{alg: string, content: string}
      */
-    public function hashToJson(string $algorithm, string $content): array
+    public function hashToJson(Hash $hash): array
     {
+        $algorithm = $hash->getAlgorithm();
         if (false === $this->spec->isSupportedHashAlgorithm($algorithm)) {
-            throw new DomainException('invalid algorithm', 1);
-        }
-        if (false === $this->spec->isSupportedHashContent($content)) {
-            throw new DomainException('invalid content', 2);
+            throw new DomainException('invalid algorithm');
         }
 
         return [
             'alg' => $algorithm,
-            'content' => $content,
+            'content' => $hash->getContent(),
         ];
     }
 
